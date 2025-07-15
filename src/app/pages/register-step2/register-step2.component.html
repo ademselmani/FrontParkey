@@ -1,0 +1,56 @@
+<div class="container mt-5">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h2 class="mb-0">Step 2: Choose Location</h2>
+    </div>
+    <div class="card-body">
+      <!-- Search Bar -->
+      <div class="input-group mb-3">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by location name or lat,lng (e.g. Tunis or 36.8,10.2)"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        />
+        <button
+          class="btn btn-outline-primary"
+          type="button"
+          (click)="onSearch()"
+        >
+          Search
+        </button>
+      </div>
+
+      <div
+        id="map"
+        style="
+          height: 400px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        "
+      ></div>
+
+      <div *ngIf="showConfirm && !registrationSuccess" class="alert alert-info">
+        <p>
+          <span class="fw-bold">Selected Location:</span>
+          <span class="text-success">{{ locationName }}</span>
+          <br />
+          <span class="fw-bold">Latitude:</span> {{ lat }},
+          <span class="fw-bold">Longitude:</span> {{ lng }}
+        </p>
+        <button class="btn btn-success" (click)="register()">
+          Confirm Location & Register
+        </button>
+      </div>
+
+      <div *ngIf="registrationSuccess" class="alert alert-success text-center">
+        <p class="mb-3">🎉 Registration successful!</p>
+        <button class="btn btn-primary" (click)="goToProfile()">
+          Go to Profile
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
