@@ -3,6 +3,7 @@ import * as L from 'leaflet';
 import { Router } from '@angular/router';
 import { UserService } from 'src/app/services/user.service';
 import { HttpClient } from '@angular/common/http';
+import { ZoneService, Zone, Street } from 'src/app/services/zone.service';
 
 // Helper to extract streets from GeoJSON
 function getStreetsFromGeoJson(geojson: any) {
@@ -30,6 +31,32 @@ export class RegisterStep2Component implements OnInit {
   registrationSuccess: boolean = false;
   searchQuery: string = '';
   infoMessage: string = '';
+
+  // CRUD Management
+  showCrudPanel: boolean = false;
+  crudMode: 'zones' | 'streets' = 'zones';
+  zones: Zone[] = [];
+  streets: Street[] = [];
+  selectedZone: Zone | null = null;
+  selectedStreet: Street | null = null;
+  isEditing: boolean = false;
+  
+  // Form models
+  zoneForm: Zone = { name: '', description: '', postCode: [], coordinates: [] };
+  streetForm: Street = { name: '', zoneId: 0, isParkable: true, coordinates: [] };
+  
+  // Coordinate input helpers
+  zoneCoordinatesText: string = '';
+  streetCoordinatesText: string = '';
+
+  // Map layers for CRUD
+  private zoneLayerGroup: L.LayerGroup = new L.LayerGroup();
+  private streetLayerGroup: L.LayerGroup = new L.LayerGroup();
+  private dynamicZoneLayerGroup: L.LayerGroup = new L.LayerGroup();
+
+  // Store dynamic zones for persistence
+  private dynamicZones: { [key: string]: [number, number][] } = {};
+  private currentPolygonData: any = {};
 
   private geofenceCenter = { lat: 36.838175, lng: 10.2375679 }; // Center on Lac 1 for initial view
 
@@ -98,18 +125,22 @@ export class RegisterStep2Component implements OnInit {
   constructor(
     private userService: UserService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private zoneService: ZoneService
   ) {}
 
   ngOnInit(): void {
     this.http.get<any>('assets/parking-polygons.json').subscribe((data) => {
+      this.currentPolygonData = data; // Store the current data
       this.lac1PolygonCoords = data.lac1PolygonCoords || [];
       this.gammarthPolygonCoords = data.gammarthPolygonCoords || [];
       this.lac2PolygonCoords = data.lac2PolygonCoords || [];
       this.LaGoulettePolygonCoords = data.LaGoulettePolygonCoords || [];
       this.LaGouletePolygonCoords = data.LaGouletePolygonCoords || [];
+      
       this.initMap();
       this.loadAndColorLocations();
+      this.loadZonesAndStreets(); // Load CRUD data
     });
   }
 
@@ -228,6 +259,12 @@ export class RegisterStep2Component implements OnInit {
           .openOn(this.map!);
       }
     });
+
+    // Setup global callbacks for CRUD operations
+    this.setupGlobalCallbacks();
+
+    // Add dynamic zone layer to map
+    this.dynamicZoneLayerGroup.addTo(this.map);
   }
 
   private isPointInPolygon(
@@ -642,5 +679,314 @@ export class RegisterStep2Component implements OnInit {
             );
           });
       });
+  }
+
+  // ============ CRUD OPERATIONS FOR ZONES AND STREETS ============
+  
+  toggleCrudPanel() {
+    this.showCrudPanel = !this.showCrudPanel;
+    if (this.showCrudPanel) {
+      this.loadZonesAndStreets();
+    }
+  }
+
+  switchCrudMode(mode: 'zones' | 'streets') {
+    this.crudMode = mode;
+    this.resetForms();
+    this.isEditing = false;
+  }
+
+  loadZonesAndStreets() {
+    this.zoneService.getAllZones().subscribe(zones => {
+      this.zones = zones;
+      this.displayZonesOnMap();
+    });
+    
+    this.zoneService.getAllStreets().subscribe(streets => {
+      this.streets = streets;
+      this.displayStreetsOnMap();
+    });
+  }
+
+  displayZonesOnMap() {
+    this.zoneLayerGroup.clearLayers();
+    
+    this.zones.forEach(zone => {
+      if (zone.coordinates && zone.coordinates.length > 0) {
+        // Convert coordinates format if needed (ensure [lat, lng] format)
+        const coords = zone.coordinates.map(coord => 
+          coord.length >= 2 ? [coord[1], coord[0]] : coord
+        ) as [number, number][];
+        
+        const polygon = L.polygon(coords, {
+          color: '#007bff',
+          weight: 2,
+          fillOpacity: 0.1,
+          className: 'crud-zone'
+        }).addTo(this.zoneLayerGroup);
+        
+        polygon.bindPopup(`
+          <div>
+            <h6>${zone.name}</h6>
+            <p>${zone.description}</p>
+            <button onclick="window.editZone(${zone.id})" class="btn btn-sm btn-primary">Edit</button>
+            <button onclick="window.deleteZone(${zone.id})" class="btn btn-sm btn-danger">Delete</button>
+          </div>
+        `);
+      }
+    });
+    
+    this.zoneLayerGroup.addTo(this.map!);
+  }
+
+  displayStreetsOnMap() {
+    this.streetLayerGroup.clearLayers();
+    
+    this.streets.forEach(street => {
+      if (street.coordinates && street.coordinates.length > 0) {
+        // Convert coordinates format if needed
+        const coords = street.coordinates.map(coord => 
+          coord.length >= 2 ? [coord[1], coord[0]] : coord
+        ) as [number, number][];
+        
+        const polyline = L.polyline(coords, {
+          color: street.isParkable ? '#28a745' : '#dc3545',
+          weight: 4,
+          className: 'crud-street'
+        }).addTo(this.streetLayerGroup);
+        
+        polyline.bindPopup(`
+          <div>
+            <h6>${street.name}</h6>
+            <p>Zone: ${street.zoneName}</p>
+            <p>Parkable: ${street.isParkable ? 'Yes' : 'No'}</p>
+            <button onclick="window.editStreet('${street.id}')" class="btn btn-sm btn-primary">Edit</button>
+            <button onclick="window.deleteStreet('${street.id}')" class="btn btn-sm btn-danger">Delete</button>
+          </div>
+        `);
+      }
+    });
+    
+    this.streetLayerGroup.addTo(this.map!);
+  }
+
+  // Helper methods for coordinate parsing
+  parseZoneCoordinates() {
+    try {
+      if (!this.zoneCoordinatesText.trim()) {
+        this.zoneForm.coordinates = [];
+        return;
+      }
+      
+      // Parse coordinates from text input
+      // Expected format: "lat1,lng1;lat2,lng2;lat3,lng3" or JSON array
+      const coords = this.parseCoordinatesFromText(this.zoneCoordinatesText);
+      this.zoneForm.coordinates = coords;
+    } catch (error) {
+      console.error('Error parsing zone coordinates:', error);
+      this.infoMessage = 'Invalid coordinate format. Use: lat1,lng1;lat2,lng2 or JSON array format.';
+    }
+  }
+
+  parseStreetCoordinates() {
+    try {
+      if (!this.streetCoordinatesText.trim()) {
+        this.streetForm.coordinates = [];
+        return;
+      }
+      
+      const coords = this.parseCoordinatesFromText(this.streetCoordinatesText);
+      this.streetForm.coordinates = coords;
+    } catch (error) {
+      console.error('Error parsing street coordinates:', error);
+      this.infoMessage = 'Invalid coordinate format. Use: lat1,lng1;lat2,lng2 or JSON array format.';
+    }
+  }
+
+  parseCoordinatesFromText(text: string): number[][] {
+    text = text.trim();
+    
+    // Try to parse as JSON first
+    if (text.startsWith('[')) {
+      const parsed = JSON.parse(text);
+      // Convert to [lng, lat] format for backend
+      return parsed.map((coord: number[]) => [coord[1], coord[0]]);
+    }
+    
+    // Parse semicolon-separated coordinates
+    const coordinatePairs = text.split(';');
+    return coordinatePairs.map(pair => {
+      const [lat, lng] = pair.split(',').map(n => parseFloat(n.trim()));
+      if (isNaN(lat) || isNaN(lng)) {
+        throw new Error('Invalid coordinate pair: ' + pair);
+      }
+      return [lng, lat]; // Store as [lng, lat] for backend
+    });
+  }
+
+  // Zone CRUD methods
+  saveZone() {
+    if (this.isEditing && this.selectedZone) {
+      this.zoneService.updateZone(this.selectedZone.id!, this.zoneForm).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.resetForms();
+          this.infoMessage = 'Zone updated successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error updating zone: ' + err.message;
+        }
+      });
+    } else {
+      this.zoneService.createZone(this.zoneForm).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.resetForms();
+          this.infoMessage = 'Zone created successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error creating zone: ' + err.message;
+        }
+      });
+    }
+  }
+
+  editZone(zoneId: number) {
+    const zone = this.zones.find(z => z.id === zoneId);
+    if (zone) {
+      this.selectedZone = zone;
+      this.zoneForm = { ...zone };
+      // Convert coordinates back to text format for editing
+      if (zone.coordinates && zone.coordinates.length > 0) {
+        this.zoneCoordinatesText = zone.coordinates
+          .map(coord => `${coord[1]},${coord[0]}`) // Convert [lng,lat] back to lat,lng
+          .join(';');
+      }
+      this.isEditing = true;
+      this.crudMode = 'zones';
+    }
+  }
+
+  deleteZone(zoneId: number) {
+    if (confirm('Are you sure you want to delete this zone?')) {
+      this.zoneService.deleteZone(zoneId).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.infoMessage = 'Zone deleted successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error deleting zone: ' + err.message;
+        }
+      });
+    }
+  }
+
+  // Street CRUD methods
+  saveStreet() {
+    if (this.isEditing && this.selectedStreet) {
+      this.zoneService.updateStreet(this.selectedStreet.id!, this.streetForm).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.resetForms();
+          this.infoMessage = 'Street updated successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error updating street: ' + err.message;
+        }
+      });
+    } else {
+      this.zoneService.createStreet(this.streetForm).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.resetForms();
+          this.infoMessage = 'Street created successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error creating street: ' + err.message;
+        }
+      });
+    }
+  }
+
+  editStreet(streetId: string) {
+    const street = this.streets.find(s => s.id === streetId);
+    if (street) {
+      this.selectedStreet = street;
+      this.streetForm = { ...street };
+      // Convert coordinates back to text format for editing
+      if (street.coordinates && street.coordinates.length > 0) {
+        this.streetCoordinatesText = street.coordinates
+          .map(coord => `${coord[1]},${coord[0]}`) // Convert [lng,lat] back to lat,lng
+          .join(';');
+      }
+      this.isEditing = true;
+      this.crudMode = 'streets';
+    }
+  }
+
+  deleteStreet(streetId: string) {
+    if (confirm('Are you sure you want to delete this street?')) {
+      this.zoneService.deleteStreet(streetId).subscribe({
+        next: () => {
+          this.loadZonesAndStreets();
+          this.infoMessage = 'Street deleted successfully!';
+        },
+        error: (err) => {
+          this.infoMessage = 'Error deleting street: ' + err.message;
+        }
+      });
+    }
+  }
+
+  resetForms() {
+    this.zoneForm = { name: '', description: '', postCode: [], coordinates: [] };
+    this.streetForm = { name: '', zoneId: 0, isParkable: true, coordinates: [] };
+    this.zoneCoordinatesText = '';
+    this.streetCoordinatesText = '';
+    this.selectedZone = null;
+    this.selectedStreet = null;
+    this.isEditing = false;
+  }
+
+  // Helper methods for popup callbacks
+  setupGlobalCallbacks() {
+    // Make methods available globally for popup buttons
+    (window as any).editZone = this.editZone.bind(this);
+    (window as any).deleteZone = this.deleteZone.bind(this);
+    (window as any).editStreet = this.editStreet.bind(this);
+    (window as any).deleteStreet = this.deleteStreet.bind(this);
+  }
+
+  // Template helper methods
+  getPostCodeString(): string {
+    return this.zoneForm.postCode?.join(', ') || '';
+  }
+
+  updatePostCodes(event: any) {
+    const value = event.target.value;
+    this.zoneForm.postCode = value
+      .split(',')
+      .map((n: string) => parseInt(n.trim()))
+      .filter((n: number) => !isNaN(n));
+  }
+
+  getCoordinatesCount(coordinates: number[][] | undefined): number {
+    return coordinates?.length || 0;
+  }
+
+  hasZoneCoordinates(): boolean {
+    return !!(this.zoneForm.coordinates && this.zoneForm.coordinates.length > 0);
+  }
+
+  hasStreetCoordinates(): boolean {
+    return !!(this.streetForm.coordinates && this.streetForm.coordinates.length > 0);
+  }
+
+  getZonePostCodes(postCodes: number[] | undefined): string {
+    return postCodes?.join(', ') || '';
+  }
+
+  getStreetsCount(streets: Street[] | undefined): number {
+    return streets?.length || 0;
   }
 }
