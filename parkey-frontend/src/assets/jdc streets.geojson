@@ -1,0 +1,108 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-07-31T10:15:18Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/91265304",
+        "highway": "secondary",
+        "lanes": "2",
+        "oneway": "yes",
+        "surface": "asphalt"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.3013234,
+            36.8532123
+          ],
+          [
+            10.3014739,
+            36.8532146
+          ],
+          [
+            10.301626,
+            36.8531888
+          ],
+          [
+            10.3023395,
+            36.8529166
+          ],
+          [
+            10.3027779,
+            36.8527414
+          ],
+          [
+            10.3032151,
+            36.8525826
+          ],
+          [
+            10.3033975,
+            36.852501
+          ],
+          [
+            10.3035429,
+            36.8524067
+          ]
+        ]
+      },
+      "id": "way/91265304"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/91271541",
+        "highway": "secondary",
+        "lanes": "2",
+        "oneway": "yes",
+        "surface": "asphalt"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.3037095,
+            36.8526617
+          ],
+          [
+            10.3035611,
+            36.8526963
+          ],
+          [
+            10.3034149,
+            36.8527468
+          ],
+          [
+            10.3027537,
+            36.853014
+          ],
+          [
+            10.302461,
+            36.8531259
+          ],
+          [
+            10.3020886,
+            36.8532587
+          ],
+          [
+            10.3017569,
+            36.8534003
+          ],
+          [
+            10.301642,
+            36.8534715
+          ],
+          [
+            10.3015496,
+            36.853575
+          ]
+        ]
+      },
+      "id": "way/91271541"
+    }
+  ]
+}

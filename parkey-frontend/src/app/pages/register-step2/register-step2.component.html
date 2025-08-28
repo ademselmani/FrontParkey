@@ -1,0 +1,324 @@
+<div class="container mt-5">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h2 class="mb-0">Step 2: Choose Location</h2>
+    </div>
+    <div class="card-body">
+      <!-- Search Bar -->
+      <div class="input-group mb-3">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by location name or lat,lng (e.g. Tunis or 36.8,10.2)"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        />
+        <button
+          class="btn btn-outline-primary"
+          type="button"
+          (click)="onSearch()"
+        >
+          Search
+        </button>
+      </div>
+
+      <div
+        id="map"
+        style="
+          height: 500px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        "
+      ></div>
+      <div
+        class="info-message"
+        *ngIf="infoMessage"
+        style="margin-top: 16px; color: #333; font-size: 1.1em"
+        [innerHTML]="infoMessage"
+      ></div>
+
+      <!-- CRUD Panel Toggle -->
+      <div class="mb-3">
+        <button class="btn btn-secondary" (click)="toggleCrudPanel()">
+          {{ showCrudPanel ? "Hide" : "Show" }} Zone & Street Management
+        </button>
+      </div>
+
+      <!-- CRUD Panel -->
+      <div *ngIf="showCrudPanel" class="crud-panel">
+        <!-- Mode Toggle -->
+        <div class="btn-group mb-3" role="group">
+          <button
+            class="btn"
+            [class.btn-primary]="crudMode === 'zones'"
+            [class.btn-outline-primary]="crudMode !== 'zones'"
+            (click)="switchCrudMode('zones')"
+          >
+            Manage Zones
+          </button>
+          <button
+            class="btn"
+            [class.btn-primary]="crudMode === 'streets'"
+            [class.btn-outline-primary]="crudMode !== 'streets'"
+            (click)="switchCrudMode('streets')"
+          >
+            Manage Streets
+          </button>
+        </div>
+
+        <!-- Zone Management -->
+        <div *ngIf="crudMode === 'zones'" class="zone-management">
+          <h4>Zone Management</h4>
+
+          <!-- Zone Form -->
+          <div class="row mb-4" id="zone-form-section">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  {{ isEditing ? "Edit Zone" : "Add New Zone" }}
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">Zone Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="zoneForm.name"
+                      placeholder="Enter zone name"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea
+                      class="form-control"
+                      [(ngModel)]="zoneForm.description"
+                      placeholder="Enter description"
+                    ></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >Post Codes (comma separated)</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      [value]="zoneForm.postCode.join(',')"
+                      (input)="updatePostCodes($event)"
+                      placeholder="e.g. 1001,1002,1003"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >Coordinates (lat,lng;lat,lng;... or JSON
+                      [[lat,lng],...])</label
+                    >
+                    <textarea
+                      class="form-control"
+                      [(ngModel)]="zoneCoordinatesText"
+                      placeholder="e.g. 36.8,10.1;36.9,10.2;37.0,10.1;36.9,10.0 OR [[36.8,10.1],[36.9,10.2]]"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <button class="btn btn-success me-2" (click)="saveZone()">
+                    {{ isEditing ? "Update" : "Create" }} Zone
+                  </button>
+                  <button
+                    *ngIf="isEditing"
+                    class="btn btn-secondary"
+                    (click)="resetForms()"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zone List -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">Existing Zones</div>
+                <div class="card-body">
+                  <div *ngIf="zones.length === 0" class="text-muted">
+                    No zones found
+                  </div>
+                  <div
+                    *ngFor="let zone of zones"
+                    class="border p-2 mb-2 rounded"
+                  >
+                    <strong>{{ zone.name }}</strong>
+                    <br /><small class="text-muted">{{
+                      zone.description
+                    }}</small>
+                    <br /><small
+                      >Post Codes: {{ zone.postCode.join(", ") }}</small
+                    >
+                    <div class="mt-2">
+                      <button
+                        class="btn btn-sm btn-outline-primary me-1"
+                        (click)="editZone(zone.id!)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="deleteZone(zone.id!)"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Street Management -->
+        <div *ngIf="crudMode === 'streets'" class="street-management">
+          <h4>Street Management</h4>
+
+          <!-- Street Form -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  {{ isEditing ? "Edit Street" : "Add New Street" }}
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">Street Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="streetForm.name"
+                      placeholder="Enter street name"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Zone</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="streetForm.zoneId"
+                    >
+                      <option value="0">Select a zone</option>
+                      <option *ngFor="let zone of zones" [value]="zone.id">
+                        {{ zone.name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        [(ngModel)]="streetForm.isParkable"
+                        id="isParkable"
+                      />
+                      <label class="form-check-label" for="isParkable"
+                        >Is Parkable</label
+                      >
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Capacity</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="streetForm.capacity"
+                      min="0"
+                      placeholder="Enter capacity (e.g. number of spots)"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label"
+                      >Coordinates (lat,lng;lat,lng;... or JSON
+                      [[lat,lng],...])</label
+                    >
+                    <textarea
+                      class="form-control"
+                      [(ngModel)]="streetCoordinatesText"
+                      placeholder="e.g. 36.8,10.1;36.9,10.2;37.0,10.3 OR [[36.8,10.1],[36.9,10.2]]"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <button class="btn btn-success me-2" (click)="saveStreet()">
+                    {{ isEditing ? "Update" : "Create" }} Street
+                  </button>
+                  <button
+                    *ngIf="isEditing"
+                    class="btn btn-secondary"
+                    (click)="resetForms()"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Street List -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">Existing Streets</div>
+                <div class="card-body">
+                  <div *ngIf="streets.length === 0" class="text-muted">
+                    No streets found
+                  </div>
+                  <div
+                    *ngFor="let street of streets"
+                    class="border p-2 mb-2 rounded"
+                  >
+                    <strong>{{ street.name }}</strong>
+                    <br /><small class="text-muted"
+                      >Zone: {{ street.zoneName || "Unknown" }}</small
+                    >
+                    <br /><small
+                      >Parkable: {{ street.isParkable ? "Yes" : "No" }}</small
+                    >
+                    <br /><small
+                      >Capacity: {{ street.capacity ?? "N/A" }}</small
+                    >
+                    <div class="mt-2">
+                      <button
+                        class="btn btn-sm btn-outline-primary me-1"
+                        (click)="editStreet(street.id!)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="deleteStreet(street.id!)"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="showConfirm && !registrationSuccess" class="alert alert-info">
+        <p>
+          <span class="fw-bold">Selected Location:</span>
+          <span class="text-success">{{ locationName }}</span>
+          <br />
+          <span class="fw-bold">Latitude:</span> {{ lat }},
+          <span class="fw-bold">Longitude:</span> {{ lng }}
+        </p>
+        <button class="btn btn-success" (click)="register()">
+          Confirm Location & Register
+        </button>
+      </div>
+
+      <div *ngIf="registrationSuccess" class="alert alert-success text-center">
+        <p class="mb-3">🎉 Registration successful!</p>
+        <button class="btn btn-primary" (click)="goToProfile()">
+          Go to Profile
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

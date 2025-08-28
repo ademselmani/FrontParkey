@@ -1,0 +1,272 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-07-31T12:00:02Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/90480813",
+        "amenity": "parking",
+        "parking": "surface"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              10.2739353,
+              36.925465
+            ],
+            [
+              10.2736302,
+              36.9256026
+            ],
+            [
+              10.2731331,
+              36.9248551
+            ],
+            [
+              10.2733698,
+              36.9246835
+            ],
+            [
+              10.2739353,
+              36.925465
+            ]
+          ]
+        ]
+      },
+      "id": "way/90480813"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/88814061",
+        "highway": "service",
+        "service": "parking_aisle"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.2731179,
+            36.9249063
+          ],
+          [
+            10.273231,
+            36.9248389
+          ],
+          [
+            10.2733705,
+            36.9247558
+          ]
+        ]
+      },
+      "id": "way/88814061"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/88814063",
+        "highway": "service",
+        "service": "parking_aisle"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.2736904,
+            36.9255176
+          ],
+          [
+            10.273231,
+            36.9248389
+          ]
+        ]
+      },
+      "id": "way/88814063"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/1173266120",
+        "highway": "service",
+        "service": "parking_aisle"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.2733705,
+            36.9247558
+          ],
+          [
+            10.273839,
+            36.925452
+          ]
+        ]
+      },
+      "id": "way/1173266120"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/1173266121",
+        "highway": "service",
+        "service": "parking_aisle"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.273839,
+            36.925452
+          ],
+          [
+            10.2736904,
+            36.9255176
+          ],
+          [
+            10.2735615,
+            36.9255744
+          ]
+        ]
+      },
+      "id": "way/1173266121"
+    },
+   {
+        "type": "Feature",
+        "properties": {
+          "@id": "way/90480813",
+          "amenity": "parking",
+          "parking": "surface"
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                10.2739353,
+                36.925465
+              ],
+              [
+                10.2736302,
+                36.9256026
+              ],
+              [
+                10.2731331,
+                36.9248551
+              ],
+              [
+                10.2733698,
+                36.9246835
+              ],
+              [
+                10.2739353,
+                36.925465
+              ]
+            ]
+          ]
+        },
+        "id": "way/90480813"
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "@id": "way/88814061",
+          "highway": "service",
+          "service": "parking_aisle"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              10.2731179,
+              36.9249063
+            ],
+            [
+              10.273231,
+              36.9248389
+            ],
+            [
+              10.2733705,
+              36.9247558
+            ]
+          ]
+        },
+        "id": "way/88814061"
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "@id": "way/88814063",
+          "highway": "service",
+          "service": "parking_aisle"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              10.2736904,
+              36.9255176
+            ],
+            [
+              10.273231,
+              36.9248389
+            ]
+          ]
+        },
+        "id": "way/88814063"
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "@id": "way/1173266120",
+          "highway": "service",
+          "service": "parking_aisle"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              10.2733705,
+              36.9247558
+            ],
+            [
+              10.273839,
+              36.925452
+            ]
+          ]
+        },
+        "id": "way/1173266120"
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "@id": "way/1173266121",
+          "highway": "service",
+          "service": "parking_aisle"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              10.273839,
+              36.925452
+            ],
+            [
+              10.2736904,
+              36.9255176
+            ],
+            [
+              10.2735615,
+              36.9255744
+            ]
+          ]
+        },
+        "id": "way/1173266121"
+      }
+  ]
+}
